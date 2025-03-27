@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>书签栏</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    .bookmark, .folder {
+      padding: 8px;
+      margin: 4px 0;
+      border-radius: 4px;
+      cursor: pointer;
+      word-break: break-all;
+    }
+    .bookmark {
+      background: #f0f0f0;
+    }
+    .bookmark:hover {
+      background: #e0e0e0;
+    }
+    .folder {
+      font-weight: bold;
+      background: #e6f3ff;
+      display: flex;
+      align-items: center;
+    }
+    .folder:before {
+      content: "▶";
+      margin-right: 5px;
+      font-size: 10px;
+    }
+    .folder.expanded:before {
+      content: "▼";
+    }
+    .children {
+      display: none;
+    }
+    .expanded + .children {
+      display: block;
+    }
+    .folder:hover {
+      background: #d0e4ff;
+    }
+  </style>
+</head>
+<body>
+  <h3>书签栏</h3>
+  <input type="text" id="search" placeholder="搜索书签..." style="
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+  ">
+  <div id="bookmarks"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
