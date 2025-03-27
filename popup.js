@@ -1,5 +1,6 @@
 // 存储所有书签用于搜索
 let allBookmarks = [];
+let pinnedBookmarks = JSON.parse(localStorage.getItem('pinnedBookmarks')) || [];
 
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('search');
@@ -12,9 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   chrome.bookmarks.getTree((bookmarkTreeNodes) => {
-    if (bookmarkTreeNodes[0] && bookmarkTreeNodes[0].children) {
-      allBookmarks = flattenBookmarks(bookmarkTreeNodes[0].children);
-      processBookmarks(bookmarkTreeNodes[0].children, bookmarksContainer);
+    if (bookmarkTreeNodes[0] && bookmarkTreeNodes[0].children && bookmarkTreeNodes[0].children[0].children) {
+      allBookmarks = flattenBookmarks(bookmarkTreeNodes[0].children[0].children);
+      processBookmarks(bookmarkTreeNodes[0].children[0].children, bookmarksContainer);
     }
   });
 });
@@ -39,8 +40,8 @@ function filterBookmarks(searchTerm) {
   
   if (searchTerm === '') {
     chrome.bookmarks.getTree((bookmarkTreeNodes) => {
-      if (bookmarkTreeNodes[0] && bookmarkTreeNodes[0].children) {
-        processBookmarks(bookmarkTreeNodes[0].children, bookmarksContainer);
+      if (bookmarkTreeNodes[0] && bookmarkTreeNodes[0].children && bookmarkTreeNodes[0].children[0].children) {
+        processBookmarks(bookmarkTreeNodes[0].children[0].children, bookmarksContainer);
       }
     });
     return;
@@ -69,6 +70,44 @@ function filterBookmarks(searchTerm) {
  * @param {HTMLElement} container - 要添加书签的DOM容器
  */
 function processBookmarks(bookmarkNodes, container, depth = 0) {
+  // 先显示固定书签
+  if (depth === 0 && pinnedBookmarks.length > 0) {
+    const pinnedContainer = document.createElement('div');
+    pinnedContainer.className = 'pinned-container';
+    container.appendChild(pinnedContainer);
+    
+    pinnedBookmarks.forEach(bookmark => {
+      const pinnedElement = document.createElement('div');
+      pinnedElement.className = 'bookmark pinned';
+      pinnedElement.style.marginLeft = `${depth * 15}px`;
+      pinnedElement.style.display = 'flex';
+      pinnedElement.style.justifyContent = 'space-between';
+      pinnedElement.style.alignItems = 'center';
+      
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = `${bookmark.title} ★`;
+      pinnedElement.appendChild(titleSpan);
+      
+      const unpinIcon = document.createElement('span');
+      unpinIcon.className = 'unpin-icon';
+      unpinIcon.title = '取消固定';
+      unpinIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pinnedBookmarks = pinnedBookmarks.filter(b => b.id !== bookmark.id);
+        localStorage.setItem('pinnedBookmarks', JSON.stringify(pinnedBookmarks));
+        filterBookmarks(document.getElementById('search').value);
+      });
+      pinnedElement.appendChild(unpinIcon);
+      
+      pinnedElement.addEventListener('click', (e) => {
+        if (e.target === pinnedElement || e.target === titleSpan) {
+          chrome.tabs.create({ url: bookmark.url });
+        }
+      });
+      
+      pinnedContainer.appendChild(pinnedElement);
+    });
+  }
   bookmarkNodes.forEach((node) => {
     if (node.children) {
       // 创建文件夹元素
@@ -92,14 +131,36 @@ function processBookmarks(bookmarkNodes, container, depth = 0) {
       processBookmarks(node.children, childrenContainer, depth + 1);
       
     } else if (node.url) {
-      // 书签处理逻辑保持不变
       const bookmarkElement = document.createElement('div');
       bookmarkElement.className = 'bookmark';
-      bookmarkElement.textContent = node.title;
       bookmarkElement.style.marginLeft = `${depth * 15}px`;
-      bookmarkElement.addEventListener('click', () => {
-        chrome.tabs.create({ url: node.url });
+      bookmarkElement.style.display = 'flex';
+      bookmarkElement.style.justifyContent = 'space-between';
+      bookmarkElement.style.alignItems = 'center';
+      
+      const titleSpan = document.createElement('span');
+      titleSpan.textContent = node.title;
+      bookmarkElement.appendChild(titleSpan);
+      
+      const pinIcon = document.createElement('span');
+      pinIcon.className = 'pin-icon';
+      pinIcon.title = '固定此书签';
+      pinIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!pinnedBookmarks.some(b => b.id === node.id)) {
+          pinnedBookmarks.push(node);
+          localStorage.setItem('pinnedBookmarks', JSON.stringify(pinnedBookmarks));
+          filterBookmarks(document.getElementById('search').value);
+        }
       });
+      bookmarkElement.appendChild(pinIcon);
+      
+      bookmarkElement.addEventListener('click', (e) => {
+        if (e.target === bookmarkElement || e.target === titleSpan) {
+          chrome.tabs.create({ url: node.url });
+        }
+      });
+      
       container.appendChild(bookmarkElement);
     }
   });

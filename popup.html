@@ -45,6 +45,42 @@
     .folder:hover {
       background: #d0e4ff;
     }
+      .pinned-container {
+        margin-bottom: 10px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 5px;
+      }
+      
+      .pinned {
+        background: #fff8e1 !important;
+        font-weight: bold;
+      }
+      
+      .pinned:hover {
+        background: #ffe0b2 !important;
+      }
+    </style>
+    <style>
+      .pin-icon, .unpin-icon {
+        margin-left: 8px;
+        font-size: 12px;
+        cursor: pointer;
+        opacity: 0.5;
+        flex-shrink: 0;
+      }
+      
+      .pin-icon:hover, .unpin-icon:hover {
+        opacity: 1;
+      }
+      
+      .pin-icon::after {
+        content: "📌";
+      }
+      
+      .unpin-icon::after {
+        content: "❌";
+      }
+    </style>
   </style>
 </head>
 <body>
